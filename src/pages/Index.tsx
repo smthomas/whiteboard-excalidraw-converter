@@ -15,7 +15,7 @@ const fileToBase64 = (file: File): Promise<string> => {
     reader.readAsDataURL(file);
     reader.onload = () => {
       // Remove data URL prefix (e.g., "data:image/png;base64,")
-      const base64String = (reader.result as string).split(',')[1];
+      const base64String = (reader.result as string).split(",")[1];
       resolve(base64String);
     };
     reader.onerror = (error) => reject(error);
@@ -37,16 +37,19 @@ const Index = () => {
       // Convert file to base64
       const base64Data = await fileToBase64(file);
 
-      const response = await fetch("https://mastra.cloud/test", {
-        method: "POST",
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          file: base64Data,
-          filename: file.name,
-        }),
-      });
+      const response = await fetch(
+        "https://hollow-acoustic-salesclerk-e159b885-e190-4f5c-90dc-d274472feaa4.mastra.cloud/api/workflows/excalidrawConverterWorkflow/execute",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            file: base64Data,
+            filename: file.name,
+          }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Conversion failed");
@@ -91,8 +94,8 @@ const Index = () => {
               Whiteboard to Excalidraw Converter
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Transform your whiteboard photos into editable Excalidraw files with
-              just a click. Upload an image or take a photo to get started.
+              Transform your whiteboard photos into editable Excalidraw files
+              with just a click. Upload an image or take a photo to get started.
             </p>
           </div>
 
