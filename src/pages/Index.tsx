@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { FileUploader } from "@/components/FileUploader";
 import { FilePreview } from "@/components/FilePreview";
@@ -8,6 +7,20 @@ interface ExcalidrawResponse {
   filename: string;
   contents: object;
 }
+
+// Utility function to convert File to base64
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      // Remove data URL prefix (e.g., "data:image/png;base64,")
+      const base64String = (reader.result as string).split(',')[1];
+      resolve(base64String);
+    };
+    reader.onerror = (error) => reject(error);
+  });
+};
 
 const Index = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -21,12 +34,18 @@ const Index = () => {
     setIsConverting(true);
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
+      // Convert file to base64
+      const base64Data = await fileToBase64(file);
 
       const response = await fetch("https://mastra.cloud/test", {
         method: "POST",
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          file: base64Data,
+          filename: file.name,
+        }),
       });
 
       if (!response.ok) {
