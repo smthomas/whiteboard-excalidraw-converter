@@ -48,6 +48,7 @@ export const FileUploader = ({ onFileSelect }: FileUploaderProps) => {
       setStream(mediaStream);
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        await videoRef.current.play(); // Explicitly start playing the video
       }
       setShowCameraPreview(true);
     } catch (error) {
@@ -70,25 +71,28 @@ export const FileUploader = ({ onFileSelect }: FileUploaderProps) => {
     const canvas = document.createElement("canvas");
     canvas.width = videoRef.current.videoWidth;
     canvas.height = videoRef.current.videoHeight;
-    canvas.getContext("2d")?.drawImage(videoRef.current, 0, 0);
-
-    canvas.toBlob((blob) => {
-      if (blob) {
-        const file = new File([blob], "capture.jpg", { type: "image/jpeg" });
-        handleFileSelect(file);
-        stopCamera();
-      }
-    }, "image/jpeg");
+    const context = canvas.getContext("2d");
+    
+    if (context) {
+      context.drawImage(videoRef.current, 0, 0);
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], "capture.jpg", { type: "image/jpeg" });
+          handleFileSelect(file);
+          stopCamera();
+        }
+      }, "image/jpeg", 0.8);
+    }
   };
 
   if (showCameraPreview) {
     return (
-      <div className="relative w-full min-h-[300px] rounded-lg overflow-hidden">
+      <div className="relative w-full min-h-[300px] rounded-lg overflow-hidden bg-black">
         <video
           ref={videoRef}
           autoPlay
           playsInline
-          className="w-full h-full object-cover"
+          className="w-full h-full object-contain"
         />
         <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-4">
           <Button
