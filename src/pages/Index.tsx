@@ -4,6 +4,15 @@ import { FilePreview } from "@/components/FilePreview";
 import { toast } from "sonner";
 
 interface ExcalidrawResponse {
+  results: {
+    convertImage: {
+      payload: {
+        results: ExcalidrawFileData;
+      };
+    };
+  };
+}
+interface ExcalidrawFileData {
   filename: string;
   contents: object;
 }
@@ -37,25 +46,23 @@ const Index = () => {
       // Convert file to base64
       const base64Data = await fileToBase64(file);
 
-      const response = await fetch(
-        "https://hollow-acoustic-salesclerk-e159b885-e190-4f5c-90dc-d274472feaa4.mastra.cloud/api/workflows/excalidrawConverterWorkflow/execute",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            file: base64Data,
-            filename: file.name,
-          }),
-        }
-      );
+      const response = await fetch(import.meta.env.VITE_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          file: base64Data,
+          filename: file.name,
+        }),
+      });
 
       if (!response.ok) {
         throw new Error("Conversion failed");
       }
 
       const result: ExcalidrawResponse = await response.json();
+      console.log("Result:", result);
       setConvertedFile(result);
       toast.success("Conversion successful!");
     } catch (error) {
@@ -67,19 +74,38 @@ const Index = () => {
   };
 
   const handleDownload = () => {
-    if (!convertedFile) return;
+    console.log("Downloading file:", convertedFile);
+    if (!convertedFile || !convertedFile?.results?.convertImage?.payload) {
+      console.error("No converted file available");
+      return;
+    }
 
-    const blob = new Blob([JSON.stringify(convertedFile.contents)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = convertedFile.filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const excalidrawFileData = convertedFile.results.convertImage.payload;
+
+    console.log("Converting file:", excalidrawFileData);
+
+    try {
+      const blob = new Blob([JSON.stringify(excalidrawFileData.contents)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      // Ensure filename has .excalidraw extension
+      const filename = excalidrawFileData.filename?.endsWith(".excalidraw")
+        ? excalidrawFileData.filename
+        : `${excalidrawFileData.filename}.excalidraw`;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast.success("File downloaded successfully!");
+    } catch (error) {
+      console.error("Download error:", error);
+      toast.error("Failed to download file");
+    }
   };
 
   return (
