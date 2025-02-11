@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Camera, Upload, X } from "lucide-react";
@@ -41,32 +40,68 @@ export const FileUploader = ({ onFileSelect }: FileUploaderProps) => {
   };
 
   const startCamera = async () => {
+    console.log("Starting camera...");
     try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.error("MediaDevices API not supported");
+        throw new Error("Camera access is not supported in your browser");
+      }
+
+      console.log("Requesting camera access...");
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
         video: { facingMode: 'environment' } 
       });
-      setStream(mediaStream);
+      console.log("Camera access granted", mediaStream.getVideoTracks()[0].label);
+
+      setShowCameraPreview(true); // Set this first to ensure the video element is rendered
+      
       if (videoRef.current) {
+        console.log("Setting video source...");
         videoRef.current.srcObject = mediaStream;
-        await videoRef.current.play(); // Explicitly start playing the video
+        videoRef.current.onloadedmetadata = () => {
+          console.log("Video metadata loaded, playing...");
+          videoRef.current?.play().catch(e => {
+            console.error("Error playing video:", e);
+          });
+        };
+        setStream(mediaStream);
+      } else {
+        console.error("Video ref is null");
       }
-      setShowCameraPreview(true);
     } catch (error) {
-      toast.error("Unable to access camera");
-      console.error(error);
+      const errorMessage = error instanceof Error ? error.message : "Unable to access camera";
+      console.error("Camera error:", error);
+      toast.error(errorMessage);
+      stopCamera();
     }
   };
 
   const stopCamera = () => {
+    console.log("Stopping camera...");
     if (stream) {
-      stream.getTracks().forEach(track => track.stop());
+      stream.getTracks().forEach(track => {
+        console.log("Stopping track:", track.label);
+        track.stop();
+      });
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
       setStream(null);
     }
     setShowCameraPreview(false);
   };
 
   const captureImage = () => {
-    if (!videoRef.current) return;
+    console.log("Attempting to capture image...");
+    if (!videoRef.current) {
+      console.error("Video ref is null during capture");
+      return;
+    }
+
+    console.log("Video dimensions:", {
+      width: videoRef.current.videoWidth,
+      height: videoRef.current.videoHeight
+    });
 
     const canvas = document.createElement("canvas");
     canvas.width = videoRef.current.videoWidth;
@@ -74,14 +109,20 @@ export const FileUploader = ({ onFileSelect }: FileUploaderProps) => {
     const context = canvas.getContext("2d");
     
     if (context) {
+      console.log("Drawing video frame to canvas...");
       context.drawImage(videoRef.current, 0, 0);
       canvas.toBlob((blob) => {
         if (blob) {
+          console.log("Image captured successfully, size:", blob.size);
           const file = new File([blob], "capture.jpg", { type: "image/jpeg" });
           handleFileSelect(file);
           stopCamera();
+        } else {
+          console.error("Failed to create blob from canvas");
         }
       }, "image/jpeg", 0.8);
+    } else {
+      console.error("Failed to get canvas context");
     }
   };
 
@@ -92,7 +133,8 @@ export const FileUploader = ({ onFileSelect }: FileUploaderProps) => {
           ref={videoRef}
           autoPlay
           playsInline
-          className="w-full h-full object-contain"
+          muted
+          style={{ width: '100%', height: '100%', objectFit: 'contain' }}
         />
         <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-4">
           <Button
@@ -154,6 +196,7 @@ export const FileUploader = ({ onFileSelect }: FileUploaderProps) => {
             <Upload className="w-4 h-4" />
             Choose File
           </Button>
+          {/* Temporarily disabled camera functionality
           <Button
             variant="outline"
             onClick={startCamera}
@@ -162,6 +205,7 @@ export const FileUploader = ({ onFileSelect }: FileUploaderProps) => {
             <Camera className="w-4 h-4" />
             Take Photo
           </Button>
+          */}
         </div>
       </div>
     </div>
