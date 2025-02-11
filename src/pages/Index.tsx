@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { FileUploader } from "@/components/FileUploader";
 import { FilePreview } from "@/components/FilePreview";
@@ -6,12 +7,11 @@ import { toast } from "sonner";
 interface ExcalidrawResponse {
   results: {
     convertImage: {
-      payload: {
-        results: ExcalidrawFileData;
-      };
+      payload: ExcalidrawFileData;
     };
   };
 }
+
 interface ExcalidrawFileData {
   filename: string;
   contents: object;
@@ -75,7 +75,7 @@ const Index = () => {
 
   const handleDownload = () => {
     console.log("Downloading file:", convertedFile);
-    if (!convertedFile || !convertedFile?.results?.convertImage?.payload) {
+    if (!convertedFile?.results?.convertImage?.payload) {
       console.error("No converted file available");
       return;
     }
