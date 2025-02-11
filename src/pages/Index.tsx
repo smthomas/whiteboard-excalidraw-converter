@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { FileUploader } from "@/components/FileUploader";
 import { FilePreview } from "@/components/FilePreview";
@@ -121,7 +120,8 @@ const Index = () => {
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Transform your whiteboard photos into editable Excalidraw files
-              with just a click. Upload an image or take a photo to get started.
+              with just a click. Upload an image of a whiteboard diagram to get
+              started.
             </p>
           </div>
 
