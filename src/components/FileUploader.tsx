@@ -1,7 +1,7 @@
 
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Camera, Upload } from "lucide-react";
+import { Camera, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 
 interface FileUploaderProps {
@@ -10,7 +10,10 @@ interface FileUploaderProps {
 
 export const FileUploader = ({ onFileSelect }: FileUploaderProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [showCameraPreview, setShowCameraPreview] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
 
   const handleFileSelect = (file: File) => {
     if (!file.type.startsWith("image/")) {
@@ -37,30 +40,76 @@ export const FileUploader = ({ onFileSelect }: FileUploaderProps) => {
     setIsDragging(false);
   };
 
-  const captureImage = async () => {
+  const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      const video = document.createElement("video");
-      video.srcObject = stream;
-      await video.play();
-
-      const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      canvas.getContext("2d")?.drawImage(video, 0, 0);
-
-      stream.getTracks().forEach(track => track.stop());
-
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const file = new File([blob], "capture.jpg", { type: "image/jpeg" });
-          handleFileSelect(file);
-        }
-      }, "image/jpeg");
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      });
+      setStream(mediaStream);
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
+      setShowCameraPreview(true);
     } catch (error) {
       toast.error("Unable to access camera");
+      console.error(error);
     }
   };
+
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    setShowCameraPreview(false);
+  };
+
+  const captureImage = () => {
+    if (!videoRef.current) return;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
+    canvas.getContext("2d")?.drawImage(videoRef.current, 0, 0);
+
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const file = new File([blob], "capture.jpg", { type: "image/jpeg" });
+        handleFileSelect(file);
+        stopCamera();
+      }
+    }, "image/jpeg");
+  };
+
+  if (showCameraPreview) {
+    return (
+      <div className="relative w-full min-h-[300px] rounded-lg overflow-hidden">
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-4">
+          <Button
+            variant="destructive"
+            onClick={stopCamera}
+            className="flex items-center gap-2"
+          >
+            <X className="w-4 h-4" />
+            Cancel
+          </Button>
+          <Button
+            onClick={captureImage}
+            className="flex items-center gap-2 bg-green-500 hover:bg-green-600"
+          >
+            <Camera className="w-4 h-4" />
+            Capture
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -103,7 +152,7 @@ export const FileUploader = ({ onFileSelect }: FileUploaderProps) => {
           </Button>
           <Button
             variant="outline"
-            onClick={captureImage}
+            onClick={startCamera}
             className="flex items-center gap-2"
           >
             <Camera className="w-4 h-4" />
