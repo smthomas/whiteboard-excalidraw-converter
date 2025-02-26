@@ -5,8 +5,8 @@ import { toast } from "sonner";
 
 interface ExcalidrawResponse {
   results: {
-    convertImage: {
-      payload: ExcalidrawFileData;
+    csvToExcalidraw: {
+      output: ExcalidrawFileData;
     };
   };
 }
@@ -74,12 +74,12 @@ const Index = () => {
 
   const handleDownload = () => {
     console.log("Downloading file:", convertedFile);
-    if (!convertedFile?.results?.convertImage?.payload) {
+    if (!convertedFile?.results?.csvToExcalidraw?.output.contents) {
       console.error("No converted file available");
       return;
     }
 
-    const excalidrawFileData = convertedFile.results.convertImage.payload;
+    const excalidrawFileData = convertedFile.results.csvToExcalidraw.output;
 
     console.log("Converting file:", excalidrawFileData);
 
