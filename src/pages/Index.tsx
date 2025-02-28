@@ -5,7 +5,7 @@ import { toast } from "sonner";
 
 interface ExcalidrawResponse {
   results: {
-    csvToExcalidraw: {
+    validateExcalidraw: {
       output: ExcalidrawFileData;
     };
   };
@@ -74,12 +74,12 @@ const Index = () => {
 
   const handleDownload = () => {
     console.log("Downloading file:", convertedFile);
-    if (!convertedFile?.results?.csvToExcalidraw?.output.contents) {
+    if (!convertedFile?.results?.validateExcalidraw?.output.contents) {
       console.error("No converted file available");
       return;
     }
 
-    const excalidrawFileData = convertedFile.results.csvToExcalidraw.output;
+    const excalidrawFileData = convertedFile.results.validateExcalidraw.output;
 
     console.log("Converting file:", excalidrawFileData);
 
@@ -136,7 +136,7 @@ const Index = () => {
 
           {isConverting && (
             <div className="text-center text-sm text-muted-foreground animate-pulse">
-              Converting your image...
+              Converting your image (this can take a few minutes)...
             </div>
           )}
         </div>
